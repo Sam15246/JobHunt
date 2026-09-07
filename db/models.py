@@ -53,7 +53,7 @@ class Job(Base):
     resume_variant = Column(
         Enum("backend", "qa", name="resume_variant", create_type=False),
     )
-    discovered_sources = Column(ARRAY(String), server_default="{}")
+    discovered_sources = Column(ARRAY(String), server_default="'{}'")
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
                         onupdate=lambda: datetime.now(timezone.utc))
