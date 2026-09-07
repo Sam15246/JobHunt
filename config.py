@@ -6,6 +6,11 @@ load_dotenv()
 # --- API Keys ---
 APIFY_TOKEN = os.getenv("APIFY_TOKEN", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+
+# --- Scorer Backend ---
+# "gemini" (free) or "claude" (paid). Auto-detects based on which key is set.
+SCORER_BACKEND = os.getenv("SCORER_BACKEND", "auto")
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/job_automation")
 
 # --- Naukri Credentials ---

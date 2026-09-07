@@ -1,49 +1,59 @@
 import json
 import pytest
 from unittest.mock import patch, MagicMock
-from filtering.claude_scorer import score_job_with_claude, run_claude_scorer
+from filtering.claude_scorer import score_job, run_claude_scorer
 from db.models import Job
 
 
-MOCK_CLAUDE_RESPONSE = json.dumps({
+MOCK_RESPONSE = json.dumps({
     "score": 82,
     "reason": "Strong match: Python backend, microservices, 2 YOE fits",
 })
 
 
-class TestScoreJobWithClaude:
-    @patch("filtering.claude_scorer.client")
-    def test_returns_score_and_reason(self, mock_client):
-        mock_message = MagicMock()
-        mock_message.content = [MagicMock(text=MOCK_CLAUDE_RESPONSE)]
-        mock_client.messages.create.return_value = mock_message
+class TestScoreJob:
+    @patch("filtering.claude_scorer._get_backend", return_value="gemini")
+    @patch("filtering.claude_scorer._score_with_gemini")
+    def test_returns_score_and_reason_gemini(self, mock_gemini, mock_backend):
+        mock_gemini.return_value = {"score": 82, "reason": "Strong match"}
 
-        result = score_job_with_claude("Backend Python Developer", "We need a backend dev...")
+        result = score_job("Backend Python Developer", "We need a backend dev...")
         assert result["score"] == 82
         assert "Strong match" in result["reason"]
+        mock_gemini.assert_called_once()
 
-    @patch("filtering.claude_scorer.client")
-    def test_handles_invalid_json(self, mock_client):
-        mock_message = MagicMock()
-        mock_message.content = [MagicMock(text="Not valid JSON")]
-        mock_client.messages.create.return_value = mock_message
+    @patch("filtering.claude_scorer._get_backend", return_value="claude")
+    @patch("filtering.claude_scorer._score_with_claude")
+    def test_returns_score_and_reason_claude(self, mock_claude, mock_backend):
+        mock_claude.return_value = {"score": 75, "reason": "Good match"}
 
-        result = score_job_with_claude("Test", "Test JD")
+        result = score_job("Backend Dev", "Python developer needed...")
+        assert result["score"] == 75
+        mock_claude.assert_called_once()
+
+    @patch("filtering.claude_scorer._get_backend", return_value="gemini")
+    @patch("filtering.claude_scorer._score_with_gemini")
+    def test_handles_invalid_json(self, mock_gemini, mock_backend):
+        mock_gemini.side_effect = json.JSONDecodeError("err", "doc", 0)
+
+        result = score_job("Test", "Test JD")
         assert result["score"] == 0
-        assert "parse" in result["reason"].lower() or "error" in result["reason"].lower()
+        assert "error" in result["reason"].lower()
 
-    @patch("filtering.claude_scorer.client")
-    def test_handles_api_error(self, mock_client):
-        mock_client.messages.create.side_effect = Exception("API timeout")
+    @patch("filtering.claude_scorer._get_backend", return_value="gemini")
+    @patch("filtering.claude_scorer._score_with_gemini")
+    def test_handles_api_error(self, mock_gemini, mock_backend):
+        mock_gemini.side_effect = Exception("API timeout")
 
-        result = score_job_with_claude("Test", "Test JD")
+        result = score_job("Test", "Test JD")
         assert result["score"] == 0
         assert "error" in result["reason"].lower()
 
 
 class TestRunClaudeScorer:
-    @patch("filtering.claude_scorer.score_job_with_claude")
-    def test_updates_status_to_scored(self, mock_score, db_session):
+    @patch("filtering.claude_scorer._get_backend", return_value="gemini")
+    @patch("filtering.claude_scorer.score_job")
+    def test_updates_status_to_scored(self, mock_score, mock_backend, db_session):
         mock_score.return_value = {"score": 85, "reason": "Great match"}
 
         job = Job(
@@ -66,8 +76,9 @@ class TestRunClaudeScorer:
         assert job.claude_score == 85
         assert job.claude_reason == "Great match"
 
-    @patch("filtering.claude_scorer.score_job_with_claude")
-    def test_updates_status_to_scored_low(self, mock_score, db_session):
+    @patch("filtering.claude_scorer._get_backend", return_value="gemini")
+    @patch("filtering.claude_scorer.score_job")
+    def test_updates_status_to_scored_low(self, mock_score, mock_backend, db_session):
         mock_score.return_value = {"score": 35, "reason": "Poor match"}
 
         job = Job(
