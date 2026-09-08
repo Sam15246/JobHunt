@@ -2,7 +2,7 @@ import json
 import logging
 from sqlalchemy.orm import Session
 from config import (
-    ANTHROPIC_API_KEY, GEMINI_API_KEY, SCORER_BACKEND,
+    ANTHROPIC_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, SCORER_BACKEND,
     CANDIDATE, CLAUDE_SCORE_THRESHOLD,
 )
 from db.models import Job
@@ -37,12 +37,14 @@ def _get_backend() -> str:
     """Determine which scoring backend to use."""
     if SCORER_BACKEND != "auto":
         return SCORER_BACKEND
+    if GROQ_API_KEY:
+        return "groq"
     if GEMINI_API_KEY:
         return "gemini"
     if ANTHROPIC_API_KEY:
         return "claude"
     raise RuntimeError(
-        "No scorer API key found. Set GEMINI_API_KEY (free) or ANTHROPIC_API_KEY in .env"
+        "No scorer API key found. Set GROQ_API_KEY (free), GEMINI_API_KEY, or ANTHROPIC_API_KEY in .env"
     )
 
 
@@ -78,14 +80,14 @@ def _score_with_claude(title: str, jd_text: str) -> dict:
 
 
 def _score_with_gemini(title: str, jd_text: str) -> dict:
-    """Score using Google Gemini API (free tier)."""
+    """Score using Google Gemini API."""
     from google import genai
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     prompt = _build_prompt(title, jd_text)
 
     response = client.models.generate_content(
-        model="gemini-2.5-flash-lite",
+        model="gemini-3.5-flash-lite",
         contents=prompt,
         config={
             "response_mime_type": "application/json",
@@ -101,12 +103,36 @@ def _score_with_gemini(title: str, jd_text: str) -> dict:
     }
 
 
+def _score_with_groq(title: str, jd_text: str) -> dict:
+    """Score using Groq API (free tier, very fast)."""
+    from groq import Groq
+
+    client = Groq(api_key=GROQ_API_KEY)
+    prompt = _build_prompt(title, jd_text)
+
+    response = client.chat.completions.create(
+        model="qwen/qwen3.8-27b",
+        messages=[{"role": "user", "content": prompt}],
+        response_format={"type": "json_object"},
+        max_tokens=200,
+    )
+
+    response_text = response.choices[0].message.content.strip()
+    result = json.loads(response_text)
+    return {
+        "score": int(result.get("score", 0)),
+        "reason": result.get("reason", ""),
+    }
+
+
 def score_job(title: str, jd_text: str) -> dict:
     """Score a job using the configured backend. Returns {score: int, reason: str}."""
     backend = _get_backend()
 
     try:
-        if backend == "gemini":
+        if backend == "groq":
+            return _score_with_groq(title, jd_text)
+        elif backend == "gemini":
             return _score_with_gemini(title, jd_text)
         else:
             return _score_with_claude(title, jd_text)

@@ -56,7 +56,7 @@ class NaukriScraper(BaseScraper):
     def parse_results(self, raw_items: list[dict]) -> list[dict]:
         jobs = []
         for item in raw_items:
-            url = item.get("url")
+            url = item.get("jobURL") or item.get("url")
             if not url:
                 continue
             jobs.append({
@@ -65,7 +65,7 @@ class NaukriScraper(BaseScraper):
                 "url": self.normalize_url(url),
                 "source": "naukri",
                 "jd_text": item.get("jobDescription", ""),
-                "location": item.get("location", ""),
+                "location": item.get("locationLabel") or item.get("location", ""),
                 "ats_type": "naukri",
                 "discovered_sources": ["naukri"],
             })

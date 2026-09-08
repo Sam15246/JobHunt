@@ -8,6 +8,7 @@ requests==2.32.*
 # AI
 anthropic==0.52.*
 google-genai==2.22.*
+groq==1.7.*
 
 # Browser automation
 playwright==1.52.*

@@ -40,7 +40,7 @@ def print_dashboard(session: Session):
     stats = get_pipeline_stats(session)
 
     print("\n" + "=" * 55)
-    print("  JOB AUTOMATION PIPELINE — DASHBOARD")
+    print("  JOB AUTOMATION PIPELINE - DASHBOARD")
     print("=" * 55)
     print(f"  Total jobs discovered:      {stats['total_scraped']:>6}")
     print("-" * 55)
@@ -48,7 +48,7 @@ def print_dashboard(session: Session):
     print(f"    Awaiting keyword filter:  {stats['scraped']:>6}")
     print(f"    Keyword passed:           {stats['keyword_passed']:>6}")
     print(f"    Keyword failed:           {stats['keyword_failed']:>6}")
-    print(f"    Claude scored (≥70):      {stats['scored']:>6}")
+    print(f"    Claude scored (>=70):      {stats['scored']:>6}")
     print(f"    Claude scored (<70):      {stats['scored_low']:>6}")
     print(f"    Ready to apply (bot):     {stats['ready_to_apply']:>6}")
     print(f"    Ready to apply (manual):  {stats['ready_for_manual_apply']:>6}")
