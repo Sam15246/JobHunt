@@ -24,9 +24,9 @@ logger = logging.getLogger(__name__)
 # Run headed mode first and adjust as needed.
 # ──────────────────────────────────────────────────────────
 SELECTORS = {
-    "login_email": "input[placeholder*='Email' i], input[name='username']",
-    "login_password": "input[type='password']",
-    "login_submit": "button[type='submit']:has-text('Login')",
+    "login_email": "#usernameField",
+    "login_password": "#passwordField",
+    "login_submit": "button.blue-btn[type='submit']",
     "apply_button": "button:has-text('Apply'), a:has-text('Apply')",
     "resume_upload": "input[type='file']",
     "submit_button": "button:has-text('Submit'), button:has-text('Apply')",

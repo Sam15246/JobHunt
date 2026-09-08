@@ -54,14 +54,15 @@ def get_application_gap() -> float:
 
 
 async def human_type(page, selector: str, text: str):
-    await page.click(selector)
+    element = page.locator(selector).first
+    await element.click()
     await page.wait_for_timeout(random_delay(0.5, 1.5) * 1000)
     for char in text:
         await page.keyboard.type(char, delay=get_keystroke_delay())
 
 
 async def human_click(page, selector: str):
-    element = page.locator(selector)
+    element = page.locator(selector).first
     await element.scroll_into_view_if_needed()
     await page.wait_for_timeout(random_delay(0.5, 2.0) * 1000)
     await element.click()
