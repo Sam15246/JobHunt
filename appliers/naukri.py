@@ -27,10 +27,10 @@ SELECTORS = {
     "login_email": "#usernameField",
     "login_password": "#passwordField",
     "login_submit": "button.blue-btn[type='submit']",
-    "apply_button": "button:has-text('Apply'), a:has-text('Apply')",
+    "apply_button": "#apply-button",
     "resume_upload": "input[type='file']",
-    "submit_button": "button:has-text('Submit'), button:has-text('Apply')",
-    "success_indicator": "text='Application Submitted', text='Successfully Applied'",
+    "submit_button": "button:has-text('Submit')",
+    "success_indicator": "text='Applied', text='Successfully Applied', text='Application Submitted'",
 }
 
 NAUKRI_BROWSER_DIR = os.path.join(BROWSER_DATA_DIR, "naukri")
@@ -82,6 +82,13 @@ class NaukriApplier(BaseApplier):
             await page.goto(job["url"], wait_until="domcontentloaded")
             await page.wait_for_timeout(random_delay(2, 5) * 1000)
 
+            # Check for "Apply on company site" (external apply — not automatable)
+            external_btn = page.locator("text='Apply on company site'").first
+            if await external_btn.count() > 0 and await external_btn.is_visible():
+                result["error_log"] = "External apply (company site) — needs manual application"
+                result["screenshot_path"] = await self.take_screenshot(page, job_id, "external_apply")
+                return result
+
             # Look for apply button
             apply_btn = page.locator(SELECTORS["apply_button"]).first
             if not await apply_btn.is_visible():
@@ -92,6 +99,13 @@ class NaukriApplier(BaseApplier):
             await human_click(page, SELECTORS["apply_button"])
             await page.wait_for_timeout(random_delay(2, 5) * 1000)
 
+            # Check if chatbot/screening questions appeared
+            chatbot = page.locator("text='How many years'").first
+            if await chatbot.count() > 0 and await chatbot.is_visible():
+                result["error_log"] = "Chatbot screening questions — needs manual application"
+                result["screenshot_path"] = await self.take_screenshot(page, job_id, "chatbot")
+                return result
+
             # Handle resume upload if file input is visible
             file_input = page.locator(SELECTORS["resume_upload"])
             if await file_input.count() > 0 and await file_input.first.is_visible():
@@ -101,20 +115,25 @@ class NaukriApplier(BaseApplier):
                     await page.wait_for_timeout(random_delay(1, 3) * 1000)
                     logger.info(f"Uploaded resume: {resume_path}")
 
-            # Click submit
-            submit_btn = page.locator(SELECTORS["submit_button"]).first
-            if await submit_btn.is_visible():
-                await human_click(page, SELECTORS["submit_button"])
-                await page.wait_for_timeout(random_delay(3, 6) * 1000)
+            # Naukri one-click apply: either button changes to "Applied"
+            # or page redirects to a confirmation page with "Applied to" text
+            await page.wait_for_timeout(random_delay(2, 4) * 1000)
 
-            # Check for success
-            success = page.locator(SELECTORS["success_indicator"])
-            if await success.count() > 0:
+            # Check 1: button text changed to "Applied" (stayed on same page)
+            applied_btn = page.locator("#apply-button")
+            btn_text = await applied_btn.text_content() if await applied_btn.count() > 0 else ""
+
+            # Check 2: redirected to confirmation page with "Applied to" banner
+            page_text = await page.locator("body").text_content()
+            page_applied = "applied to" in page_text.lower() if page_text else False
+
+            if (btn_text and "applied" in btn_text.lower()) or page_applied:
                 result["status"] = "submitted"
                 result["screenshot_path"] = await self.take_screenshot(page, job_id, "success")
                 logger.info(f"Successfully applied to {job['title']} at {job['company']}")
             else:
-                result["error_log"] = "Submit clicked but no success confirmation found"
+                # May have a chatbot or form — take screenshot for manual review
+                result["error_log"] = "Apply clicked but no confirmation detected"
                 result["screenshot_path"] = await self.take_screenshot(page, job_id, "no_confirmation")
 
         except PlaywrightTimeout as e:
@@ -246,7 +265,10 @@ async def run_naukri_applier(limit: int = None):
                     logger.info(f"Waiting {gap:.0f}s before next application...")
                     await page.wait_for_timeout(gap * 1000)
 
-            await browser.close()
+            try:
+                await browser.close()
+            except Exception:
+                pass  # Browser may already be closed
 
         logger.info(f"Session complete. Applied to {applied_count} jobs.")
 
