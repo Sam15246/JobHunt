@@ -15,6 +15,7 @@ browser_data/
 # Runtime artifacts
 screenshots/
 resumes/tailored/
+resumes/templates/*.pdf
 
 # IDE
 .vscode/

@@ -23,9 +23,9 @@ def get_pipeline_stats(session: Session) -> dict:
         "keyword_failed": count_status("keyword_failed"),
         "scored": count_status("scored"),
         "scored_low": count_status("scored_low"),
-        "resume_assigned": count_status("resume_assigned"),
         "ready_to_apply": count_status("ready_to_apply"),
         "ready_for_manual_apply": count_status("ready_for_manual_apply"),
+        "awaiting_review": count_status("awaiting_review"),
         "submitted": count_status("submitted"),
         "failed": count_status("failed"),
         "skipped": count_status("skipped"),
@@ -52,6 +52,7 @@ def print_dashboard(session: Session):
     print(f"    Claude scored (<70):      {stats['scored_low']:>6}")
     print(f"    Ready to apply (bot):     {stats['ready_to_apply']:>6}")
     print(f"    Ready to apply (manual):  {stats['ready_for_manual_apply']:>6}")
+    print(f"    Awaiting your review:     {stats['awaiting_review']:>6}")
     print(f"    Submitted:                {stats['submitted']:>6}")
     print(f"    Failed:                   {stats['failed']:>6}")
     print(f"    Skipped:                  {stats['skipped']:>6}")

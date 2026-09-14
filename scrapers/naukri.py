@@ -3,11 +3,15 @@ import logging
 import requests
 from scrapers.base import BaseScraper
 from config import APIFY_TOKEN
+from db.repository import save_jobs_to_db  # noqa: F401 -- re-exported, main.py imports it from here
 
 logger = logging.getLogger(__name__)
 
 NAUKRI_ACTOR_ID = "epicscrapers~naukri-scraper"
 APIFY_BASE = "https://api.apify.com/v2"
+
+REQUEST_TIMEOUT = 60  # seconds per HTTP request
+MAX_POLL_ATTEMPTS = 60  # 60 * 10s = 10 minutes max wait
 
 
 class NaukriScraper(BaseScraper):
@@ -20,6 +24,7 @@ class NaukriScraper(BaseScraper):
             json={"keyword": keyword, "location": location, "maxItems": max_results},
             headers={"Authorization": f"Bearer {APIFY_TOKEN}"},
             params={"waitForFinish": 300},
+            timeout=REQUEST_TIMEOUT,
         )
         run_response.raise_for_status()
         run_data = run_response.json()["data"]
@@ -27,12 +32,18 @@ class NaukriScraper(BaseScraper):
         dataset_id = run_data["defaultDatasetId"]
 
         status = run_data.get("status", "")
+        poll_count = 0
         while status not in ("SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT"):
-            logger.info(f"Waiting for Apify run {run_id}... status={status}")
+            poll_count += 1
+            if poll_count > MAX_POLL_ATTEMPTS:
+                logger.error(f"Apify run {run_id} timed out after {poll_count} polls")
+                return []
+            logger.info(f"Waiting for Apify run {run_id}... status={status} (poll {poll_count}/{MAX_POLL_ATTEMPTS})")
             time.sleep(10)
             status_resp = requests.get(
                 f"{APIFY_BASE}/actor-runs/{run_id}",
                 headers={"Authorization": f"Bearer {APIFY_TOKEN}"},
+                timeout=REQUEST_TIMEOUT,
             )
             status_resp.raise_for_status()
             status = status_resp.json()["data"]["status"]
@@ -46,6 +57,7 @@ class NaukriScraper(BaseScraper):
             dataset_url,
             headers={"Authorization": f"Bearer {APIFY_TOKEN}"},
             params={"format": "json", "limit": max_results},
+            timeout=REQUEST_TIMEOUT,
         )
         dataset_resp.raise_for_status()
         raw_items = dataset_resp.json()
@@ -71,37 +83,3 @@ class NaukriScraper(BaseScraper):
             })
         logger.info(f"Parsed {len(jobs)} valid jobs from {len(raw_items)} items")
         return jobs
-
-
-from db.connection import get_session
-from db.models import Job
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-
-
-def save_jobs_to_db(jobs: list[dict]) -> int:
-    session = get_session()
-    inserted = 0
-    try:
-        for job_data in jobs:
-            stmt = pg_insert(Job).values(
-                title=job_data["title"],
-                company=job_data["company"],
-                url=job_data["url"],
-                source=job_data["source"],
-                jd_text=job_data.get("jd_text"),
-                location=job_data.get("location"),
-                ats_type=job_data.get("ats_type", "unknown"),
-                status="scraped",
-                discovered_sources=job_data.get("discovered_sources", []),
-            ).on_conflict_do_nothing(index_elements=["url"])
-            result = session.execute(stmt)
-            if result.rowcount > 0:
-                inserted += 1
-        session.commit()
-        logger.info(f"Inserted {inserted} new jobs ({len(jobs) - inserted} duplicates skipped)")
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-    return inserted

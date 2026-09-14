@@ -41,8 +41,8 @@ class Job(Base):
     status = Column(
         Enum("scraped", "keyword_passed", "keyword_failed",
              "scored", "scored_low",
-             "resume_assigned", "ready_to_apply", "ready_for_manual_apply",
-             "submitted", "failed", "skipped",
+             "ready_to_apply", "ready_for_manual_apply",
+             "awaiting_review", "submitted", "failed", "skipped",
              name="job_status", create_type=False),
         nullable=False,
         server_default="scraped",
