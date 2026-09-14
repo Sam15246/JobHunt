@@ -18,6 +18,68 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localho
 NAUKRI_EMAIL = os.getenv("NAUKRI_EMAIL", "")
 NAUKRI_PASSWORD = os.getenv("NAUKRI_PASSWORD", "")
 
+# --- Workday (per-employer) ---
+# One entry per company you want the Workday scraper/applier to watch.
+# tenant/dc/site/locale come straight out of the company's careers URL:
+#   https://{tenant}.{dc}.myworkdayjobs.com/{locale}/{site}?locations=...
+# location_facets is the "locations=" value from that URL -- it's an
+# opaque Workday ID, not a place name, so double-check it's still the
+# right filter before relying on it (these can be per-tenant and easy to
+# get wrong).
+WORKDAY_EMPLOYERS = {
+    "mastercard": {
+        "tenant": "mastercard",
+        "dc": "wd1",
+        "site": "CorporateCareers",
+        "locale": "en-US",
+        "company_name": "Mastercard",
+        # From: https://mastercard.wd1.myworkdayjobs.com/en-US/CorporateCareers?locations=8eab563831bf10acbc722e4859721571
+        "location_facets": ["8eab563831bf10acbc722e4859721571"],
+        "title_patterns": [
+            "software engineer i", "software engineer ii", "software engineer iii",
+            "senior software engineer",
+        ],
+        "search_text": "software engineer",
+    },
+}
+
+# Credentials per Workday employer -- add to .env as, e.g.,
+# WORKDAY_MASTERCARD_EMAIL / WORKDAY_MASTERCARD_PASSWORD. Never hardcode
+# these here.
+WORKDAY_CREDENTIALS = {
+    key: {
+        "email": os.getenv(f"WORKDAY_{key.upper()}_EMAIL", ""),
+        "password": os.getenv(f"WORKDAY_{key.upper()}_PASSWORD", ""),
+    }
+    for key in WORKDAY_EMPLOYERS
+}
+
+# Per-employer auto-submit toggle.
+#   False (default) -- the bot logs in, uses "Use My Last Application",
+#     answers any screening question it recognizes from SCREENING_ANSWERS,
+#     and STOPS one screen before Submit. Job status becomes
+#     "awaiting_review"; you finish it yourself (log into the employer's
+#     Workday candidate portal, find the saved in-progress application,
+#     click Submit).
+#   True -- the bot clicks Submit too, same as the Naukri applier.
+# Defaults to False everywhere on purpose -- see the JobHunt system review
+# doc for why a fully-automated submit to a company you actually want to
+# work for deserves a more deliberate decision than a Naukri listing does.
+WORKDAY_AUTO_SUBMIT = {key: False for key in WORKDAY_EMPLOYERS}
+
+# Recurring screening-question answers, matched by case-insensitive
+# substring against the question's label text on the page. Add to this as
+# you hit new repeated questions. Anything NOT matched here gets a
+# screenshot and is left for you -- the applier never guesses an answer.
+# Example:
+# SCREENING_ANSWERS = {
+#     "are you legally authorized to work": "Yes",
+#     "will you now or in the future require sponsorship": "No",
+# }
+SCREENING_ANSWERS = {
+    # Zaki/Ali: fill this in with the actual recurring questions + answers.
+}
+
 # --- Candidate Profile ---
 CANDIDATE = {
     "name": "Syed Ali Mujtaba",

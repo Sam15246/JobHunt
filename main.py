@@ -20,21 +20,39 @@ def cli():
 
 
 @cli.command()
-@click.option("--source", default="naukri", help="Scraper source (naukri)")
-@click.option("--keyword", required=True, help="Job search keyword")
-@click.option("--location", default="", help="Job location filter")
+@click.option("--source", default="naukri", help="Scraper source (naukri, workday)")
+@click.option("--keyword", default="", help="Job search keyword (naukri)")
+@click.option("--location", default="", help="Job location filter (naukri)")
 @click.option("--max-results", default=500, help="Max results to fetch")
-def scrape(source, keyword, location, max_results):
+@click.option("--employer", default=None, help="Workday employer key from config.WORKDAY_EMPLOYERS (e.g. mastercard)")
+def scrape(source, keyword, location, max_results, employer):
     """Scrape job listings from a source."""
     if source == "naukri":
+        if not keyword:
+            raise click.UsageError("--keyword is required for --source naukri")
         from scrapers.naukri import NaukriScraper, save_jobs_to_db
 
         scraper = NaukriScraper()
         jobs = scraper.fetch(keyword=keyword, location=location, max_results=max_results)
         inserted = save_jobs_to_db(jobs)
         click.echo(f"Scraped {len(jobs)} jobs, inserted {inserted} new jobs into DB.")
+
+    elif source == "workday":
+        if not employer:
+            raise click.UsageError("--employer is required for --source workday (e.g. --employer mastercard)")
+        from scrapers.workday import WorkdayScraper
+        from db.repository import save_jobs_to_db
+
+        scraper = WorkdayScraper()
+        jobs = scraper.fetch_employer(employer, max_results=max_results)
+        # cooldown_days=45: skip re-inserting the "same" role if Workday
+        # reposts it under a new requisition ID within 45 days -- see
+        # db/repository.is_recent_duplicate_role.
+        inserted = save_jobs_to_db(jobs, cooldown_days=45)
+        click.echo(f"Scraped {len(jobs)} matching {employer} jobs, inserted {inserted} new jobs into DB.")
+
     else:
-        click.echo(f"Source '{source}' not supported yet. Available: naukri")
+        click.echo(f"Source '{source}' not supported yet. Available: naukri, workday")
 
 
 @cli.command("filter")
@@ -55,7 +73,7 @@ def keyword_filter():
 def score():
     """Run Claude scorer on keyword-passed jobs."""
     from db.connection import get_session
-    from filtering.claude_scorer import run_claude_scorer
+    from filtering.scorer import run_claude_scorer
 
     session = get_session()
     try:
@@ -86,15 +104,21 @@ def assign_resumes():
 
 
 @cli.command()
-@click.option("--platform", default="naukri", help="Platform to apply on")
+@click.option("--platform", default="naukri", help="Platform to apply on (naukri, workday)")
 @click.option("--limit", default=None, type=int, help="Max applications this session")
-def apply(platform, limit):
+@click.option("--employer", default=None, help="Workday employer key from config.WORKDAY_EMPLOYERS (e.g. mastercard)")
+def apply(platform, limit, employer):
     """Run Playwright applier for a platform."""
     if platform == "naukri":
         from appliers.naukri import run_naukri_applier
         asyncio.run(run_naukri_applier(limit=limit))
+    elif platform == "workday":
+        if not employer:
+            raise click.UsageError("--employer is required for --platform workday (e.g. --employer mastercard)")
+        from appliers.workday import run_workday_applier
+        asyncio.run(run_workday_applier(employer, limit=limit))
     else:
-        click.echo(f"Platform '{platform}' applier not built yet. Available: naukri")
+        click.echo(f"Platform '{platform}' applier not built yet. Available: naukri, workday")
 
 
 @cli.command()
@@ -143,6 +167,38 @@ def manual_queue():
         session.close()
 
 
+@cli.command("review-queue")
+def review_queue():
+    """Show jobs the bot filled out but left for you to submit (Workday semi-auto)."""
+    from db.connection import get_session
+    from db.models import Job
+
+    session = get_session()
+    try:
+        jobs = (
+            session.query(Job)
+            .filter(Job.status == "awaiting_review")
+            .order_by(Job.claude_score.desc().nullslast())
+            .all()
+        )
+
+        if not jobs:
+            click.echo("No jobs awaiting review.")
+            return
+
+        click.echo(f"\n{'=' * 80}")
+        click.echo(f"  AWAITING YOUR REVIEW -- {len(jobs)} jobs")
+        click.echo(f"  (log into the employer's Workday candidate portal and submit the saved draft)")
+        click.echo(f"{'=' * 80}")
+        for i, job in enumerate(jobs, 1):
+            click.echo(f"\n  [{i}] {job.title} @ {job.company}")
+            click.echo(f"      Score: {job.claude_score or 'N/A'}")
+            click.echo(f"      URL: {job.url}")
+        click.echo(f"\n{'=' * 80}\n")
+    finally:
+        session.close()
+
+
 @cli.command("run-all")
 @click.option("--keyword", required=True, help="Job search keyword")
 @click.option("--location", default="", help="Location filter")
@@ -153,7 +209,7 @@ def run_all(keyword, location, apply_limit, skip_apply):
     from scrapers.naukri import NaukriScraper, save_jobs_to_db
     from db.connection import get_session
     from filtering.keyword_filter import run_keyword_filter
-    from filtering.claude_scorer import run_claude_scorer
+    from filtering.scorer import run_claude_scorer
     from resumes.router import run_resume_router
     from tracking.dashboard import print_dashboard
 

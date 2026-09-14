@@ -1,0 +1,11 @@
+-- Adds the 'awaiting_review' job_status value used by the Workday applier's
+-- semi-auto mode (bot fills the application via "Use My Last Application",
+-- stops one screen before Submit, and waits for you to finish it).
+--
+-- Run this ONCE against your existing database (schema.sql already has it
+-- for anyone setting up fresh):
+--
+--   psql -U postgres -d job_automation -f db/migrations/001_add_awaiting_review_status.sql
+--
+-- Postgres 12+ supports IF NOT EXISTS here, so this is safe to run twice.
+ALTER TYPE job_status ADD VALUE IF NOT EXISTS 'awaiting_review';
