@@ -77,7 +77,20 @@ WORKDAY_AUTO_SUBMIT = {key: False for key in WORKDAY_EMPLOYERS}
 #     "will you now or in the future require sponsorship": "No",
 # }
 SCREENING_ANSWERS = {
-    # Zaki/Ali: fill this in with the actual recurring questions + answers.
+    # --- Application Questions 1 of 2 ---
+    "are you now legally authorized to work": "Yes",
+    "require sponsorship for an employment visa": "No",
+    "restrictive covenant, non-compete agreement": "No",
+    "gender": "Male",
+    "have you ever worked for mastercard": "No",
+    "desired salary": "20 - 24 LPA",
+    # --- Application Questions 2 of 2 ---
+    "engage with mastercard employees to negotiate": "No",
+    "authority to influence and/or sign commercial contracts": "No",
+    "employee of a government office or agency that has oversight over mastercard": "No",
+    "related to anyone who is an employee of a government office": "No",
+    "close personal relationship with a current mastercard employee": "No",
+    "outside employment or activity": "No",
 }
 
 # --- Candidate Profile ---
