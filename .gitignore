@@ -13,6 +13,7 @@ build/
 browser_data/
 
 # Runtime artifacts
+logs/
 screenshots/
 resumes/tailored/
 resumes/templates/*.pdf

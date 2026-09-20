@@ -36,8 +36,7 @@ WORKDAY_EMPLOYERS = {
         # From: https://mastercard.wd1.myworkdayjobs.com/en-US/CorporateCareers?locations=8eab563831bf10acbc722e4859721571
         "location_facets": ["8eab563831bf10acbc722e4859721571"],
         "title_patterns": [
-            "software engineer i", "software engineer ii", "software engineer iii",
-            "senior software engineer",
+            "software engineer",
         ],
         "search_text": "software engineer",
     },
