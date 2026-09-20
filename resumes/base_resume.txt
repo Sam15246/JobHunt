@@ -1,0 +1,52 @@
+SYED ALI MUJTABA
+Backend Software Engineer -- Java/Spring Boot Microservices & Payment APIs for Banking Platforms
+Pune, India | +91 7068493336 | alilamart15246@gmail.com | LinkedIn | GitHub
+
+TECHNICAL SKILLS
+Backend: Java, Spring Boot, Spring Framework, REST APIs, OpenAPI, Microservices, API Development, API Integration, API Orchestration (PAPI), Spring Data JPA
+Reactive & Distributed: RxJava, Reactive Programming, Asynchronous Processing, Distributed Systems, Retry/Timeout Handling, Error Handling
+Security: OAuth 2.0, JWT, B2B Authentication, Token-Based Authentication
+Cloud & DevOps: Kubernetes, Docker/Podman, Jenkins, CI/CD, Git, GitHub, Cloud-Native Systems
+Testing & Monitoring: JUnit, Mockito, Postman, Splunk
+Languages: Java, Python, SQL, C++, Bash
+AI / GenAI: FastAPI, LangChain, Gemini API, Agentic Workflows, Tool Calling
+
+EXPERIENCE
+Software Engineer -- HSBC Technology India (July 2024 - Present)
+- Grew from core REST API development into owning multi-service orchestration -- building Java/Spring Boot REST APIs, microservices and API orchestration / Process API flows live across 4 markets: India, Singapore, UAE and the UK.
+- Engineered a Python + Splunk utility to extract, parse and aggregate application logs, cutting API failure investigation time by roughly 50-75% across distributed services -- since adopted by other teams.
+- Owned backend workflows for HSBC's MENAT Corporate Cards mobile app -- live in production and used at scale -- spanning card summary/details, block/unblock, lost/stolen reporting, PIN management and transaction processing, within a 5-engineer UAE team.
+- Onboarded, trained and mentored several new/lateral joiners, and reviewed pull requests from peer and junior developers for code quality.
+- Secured service-to-service authentication for banking and payment APIs using OAuth 2.0/JWT and B2B token-based authentication across encrypted communications.
+- Migrated 3 core APIs within a large-scale, 200+-API Nova platform migration, validating downstream dependencies and request/response compatibility, and verifying stability after each deployment.
+- Led backend changes across 2 platform migrations -- Mule-to-Kong API gateway and AL2-to-AL3 -- resolving gateway routing and service-integration issues, and validating each rollout across affected services.
+
+Key Project: Visa Click-to-Pay (UK)
+Java, Spring Boot, RxJava, OAuth/JWT, Kubernetes, Jenkins
+- Built the backend for Visa Click-to-Pay in-app card-provisioning (UK) within a 5-member API team, orchestrating customer eligibility, enrollment and payment instrument provisioning across 3 services -- CDM, RPS and Visa.
+- Orchestrated customer identifiers (ECID) across a 4-stage service flow -- customer-data retrieval, card-system integration, Visa data retrieval and backend status updates -- using RxJava for reactive processing with retry, timeout and error handling.
+- Coordinated asynchronous polling for external Visa status retrieval and backend state transitions (in-progress, successful, failure), including failure and cleanup paths for unsuccessful enrollments.
+- Validated the Click-to-Pay flow with JUnit and Mockito component tests, mocking 3 downstream dependencies (Visa, CDM, RPS) to cover business-logic and error-handling scenarios in isolation.
+
+PROJECTS
+Vehicle Parking Management System
+Python, Flask, SQLAlchemy, SQLite, Redis, Celery, Vue 3, REST APIs, JWT -- GitHub
+- Independently extended an IIT Madras MAD2 (Modern Application Development II) course project into a full-stack system with 25+ REST APIs (Flask-RESTful), JWT auth and role-based access control across separate admin and user flows.
+- Introduced Redis caching with TTL-based invalidation, graceful degradation when Redis is unavailable, and cache-status headers (X-Cache: HIT/MISS).
+- Architected a Celery async task system (Redis broker) for scheduled reminders (Celery Beat, Google Chat + SMTP delivery), automated PDF reports (ReportLab), and CSV exports via a 4-state job-state machine (pending -> running -> completed/failed).
+- Modelled 6 relational entities in SQLAlchemy with cascading deletes and composite constraints, authored a complete OpenAPI 3.0.3 spec (13 reusable schemas), and shipped the Vue 3 frontend with Chart.js analytics dashboards.
+
+Data Analyst Agent -- Agentic Code-Generation System
+Python, FastAPI, LangChain, Gemini API -- GitHub
+- Independently designed an autonomous agentic system that generates, executes and validates Python code for analytical questions over uploaded datasets, using LangChain tool calling, multi model fallback and subprocess-based sandboxed execution with timeouts and structured JSON parsing.
+- Hardened the system with 4 layers of failure handling -- retry logic, quota-aware key rotation, graceful model degradation and generated-code error recovery.
+
+EDUCATION
+B.Tech in Computer Engineering -- Jamia Millia Islamia, New Delhi (2020 - 2024)
+CGPA: 9.54 / 10 -- Top 5% of Batch -- Merit Scholarship Recipient
+
+Diploma in Data Science & Programming -- IIT Madras (Online) (2023 - 2025)
+CGPA: 8.34 / 10 -- Focus: Data Science, Programming, Cloud & Applied Statistics -- completed part-time alongside the full-time HSBC role
+
+CERTIFICATIONS
+Oracle Certified Java SE 8 Programmer (2024), Databricks Certified Data Engineer Associate (2025), Python Certified Associate Programmer (PCAP) (2025)
